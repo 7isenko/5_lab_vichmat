@@ -69,6 +69,7 @@ public class Main {
 
         // TODO: интервал в обратную сторону (попробую)
         // TODO: проверка одз у тангенса
+        // TODO: график диффура???
 
      //   for (Point point : points) {
      //       System.out.printf("x=%f, y=%f\n", point.x, point.y);
