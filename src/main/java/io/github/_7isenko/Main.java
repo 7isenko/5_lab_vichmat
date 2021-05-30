@@ -1,174 +1,78 @@
 package io.github._7isenko;
 
-import io.github._7isenko.approximation.*;
 import io.github._7isenko.point.Point;
-import org.knowm.xchart.XYChart;
+import io.github._7isenko.point.PointFunction;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+
+import static java.lang.Math.*;
 
 /**
  * @author 7isenko
  */
 public class Main {
 
-    private static final InputReader inputReader = new InputReader();
-
     public static void main(String[] args) {
         blockErrorStream();
 
-        List<File> files;
-        try {
-            files = Files.walk(Paths.get("points"))
-                    .filter(f -> f.getFileName().toString().endsWith(".txt"))
-                    .map(Path::toFile)
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            System.out.println("Не могу найти папку points");
-            return;
-        }
-
-        System.out.println("Файлы в папке points:");
-        for (int i = 0; i < files.size(); i++) {
-            File file = files.get(i);
-            System.out.println(i + 1 + " - " + file.getName());
-        }
-
-        System.out.println("Выберите номер файла для считывания точек: ");
-        int fileNumber = inputReader.readIntFromConsole();
-        if (fileNumber > files.size() || fileNumber <= 0) {
-            System.out.println("Такого номера нет. Попробуйте еще раз");
-            main(args);
-            return;
-        }
-
-
-        File file = files.get(fileNumber - 1);
-        ArrayList<io.github._7isenko.point.Point> points = InputReader.readPointsFromFile(file);
-
-        GraphBuilder.drawPoints(points);
-
-        System.out.println("Выберите аппроксимирующую функцию");
-        System.out.println("1: y = ax + b");
-        System.out.println("2: y = ax^2 + bx + c");
-        System.out.println("3: y = b * e^(a*x), b > 0");
-        System.out.println("4: y = a/x + b");
-        int chosenAlgorithm = inputReader.readIntFromConsole();
+        System.out.println("Выберите ОДУ: ");
+        System.out.println("1: y' + 2xy = 2x^3 * y^3"); //  y(0) = sqrt(2)    y = 1/sqrt(x^2 + 0.5)     уравнение Бернулли
+        System.out.println("2: y' - y/x = x*sin(x)");   //  y(pi/2) = 1       y = x(2/pi - cos(x))
+        System.out.println("3: y' = y^2 + 1");          //  y(0) = 0          y = tg(x)                 от -pi/2 до pi/2
+        System.out.println("4: (13y^3 - x)y' = 4y");    //  y(5) = 1          x = y^3 + 4 / 4root(y)
+        int chosenAlgorithm = InputReader.readIntFromConsole();
 
         if (chosenAlgorithm > 4 || chosenAlgorithm <= 0) {
             System.out.println("Таких я не знаю!");
             return;
         }
 
-        ApproximateFunction chosenApproximateFunction;
-        String strFunc;
+        PointFunction chosenFunction;
 
         switch (chosenAlgorithm) {
             case 1:
-                chosenApproximateFunction = new LinearApproximateFunction(points);
-                strFunc = "y = %fx + %f";
+                chosenFunction = point -> 2 * pow(point.x, 3) * pow(point.y, 3) - 2 * point.x * point.y;
                 break;
             case 2:
-                chosenApproximateFunction = new SquareApproximateFunction(points);
-                strFunc = "y = %fx^2 + %fx + %f";
+                chosenFunction = point -> point.x * sin(point.x) + point.y / point.x;
                 break;
             case 3:
-                chosenApproximateFunction = new ExponentialApproximateFunction(points);
-                strFunc = "y = %2$f*e^(%1$f*x)";
+                chosenFunction = point -> pow(point.y, 2) + 1;
                 break;
             case 4:
-                chosenApproximateFunction = new HyperboleApproximateFunction(points);
-                strFunc = "y = %f/x + %f";
+                chosenFunction = point -> 4 * point.y / (13 * pow(point.y, 3) - point.x);
                 break;
             default:
                 return;
         }
 
-        try {
-            chosenApproximateFunction.calculateCoefficients();
-        } catch (ArithmeticException e) {
-            System.out.println(e.getMessage());
-            return;
-        }
+        System.out.println("Введите начальное приближение: ");
+        System.out.print("x = ");
+        double x = InputReader.readDoubleFromConsole();
+        System.out.print("y = ");
+        double y = InputReader.readDoubleFromConsole();
+        Point starting = new Point(x, y);
 
-        double a_first, b_first, c_first;
-        a_first = chosenApproximateFunction.getA();
-        b_first = chosenApproximateFunction.getB();
-        c_first = chosenApproximateFunction.getC();
+        System.out.println("Введите конец интервала: ");
+        double endX = InputReader.readDoubleFromConsole();
 
-        System.out.println("Получены коэффициенты:");
-        if (c_first == 0) {
-            System.out.printf("a = %f; b = %f\n", a_first, b_first);
-            System.out.println("Функция имеет вид:");
-            System.out.printf(strFunc + "\n", a_first, b_first);
-        } else {
-            System.out.printf("a = %f; b = %f; c = %f\n", a_first, b_first, c_first);
-            System.out.println("Функция имеет вид:");
-            System.out.printf(strFunc + "\n", a_first, b_first, c_first);
-        }
+        System.out.println("Введите точность: ");
+        double accuracy = InputReader.readDoubleFromConsole();
 
-        for (Point point : points) {
-            System.out.printf("x=%f, y=%f, f=%f, d=%f\n" , point.x, point.y, chosenApproximateFunction.solve(point.x), Math.abs(chosenApproximateFunction.solve(point.x) - point.y));
-        }
+        RungeKuttaMethod method = new RungeKuttaMethod(chosenFunction, accuracy);
+        method.solve(starting, endX);
+        ArrayList<Point> points = method.getPoints();
 
-        XYChart chart = GraphBuilder.createFunctionGraphWithPoints(chosenApproximateFunction, points);
+        GraphBuilder.drawPoints(points);
 
-        io.github._7isenko.point.Point remove = points.get(0);
-        double inac = Math.abs(remove.y - chosenApproximateFunction.solve(remove.x));
-        for (Point point : points) {
-            double y = chosenApproximateFunction.solve(point.x);
-            double in = Math.abs(y - point.y);
-            if (in > inac) {
-                inac = in;
-                remove = point;
-            }
-        }
+        // TODO: интервал в обратную сторону (попробую)
+        // TODO: проверка одз у тангенса
 
-        System.out.println("Хотите ли вы найти точку с наибольшим отклонением?");
-        if (inputReader.parseYesOrNo()) {
-            System.out.printf("Точка с наибольшим отклонением: x = %f, y = %f\n", remove.x, remove.y);
-            System.out.printf("Отклонение от ожидаемого значения равно %f\n", inac);
-           GraphBuilder.addRedPoint(remove, chart);
-
-            System.out.println("Удалить её?");
-            if (inputReader.parseYesOrNo()) {
-                GraphBuilder.removeRedPoint(chart);
-                points.remove(remove);
-                chosenApproximateFunction.calculateCoefficients();
-                GraphBuilder.addFunctionToGraph(chosenApproximateFunction, points, chart);
-                System.out.println("Точка удалена");
-
-                double a, b, c;
-                a = chosenApproximateFunction.getA();
-                b = chosenApproximateFunction.getB();
-                c = chosenApproximateFunction.getC();
-                System.out.println("Новые значения:");
-                if (c == 0) {
-                    System.out.printf("a = %f; b = %f\n", a, b);
-                    System.out.printf(strFunc + "\n", a, b);
-
-                } else {
-                    System.out.printf("a = %f; b = %f; c = %f\n", a, b, c);
-                    System.out.printf(strFunc + "\n", a, b, c);
-                }
-                System.out.println("Прошлые значения:");
-                if (c_first == 0) {
-                    System.out.printf("a = %f; b = %f\n", a_first, b_first);
-                    System.out.printf(strFunc + "\n", a_first, b_first);
-                } else {
-                    System.out.printf("a = %f; b = %f; c = %f\n", a_first, b_first, c_first);
-                    System.out.printf(strFunc + "\n", a_first, b_first, c_first);
-                }
-            }
-        }
+     //   for (Point point : points) {
+     //       System.out.printf("x=%f, y=%f\n", point.x, point.y);
+     //   }
     }
 
     private static void blockErrorStream() {

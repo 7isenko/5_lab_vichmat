@@ -30,19 +30,19 @@ public class InputReader {
         return points;
     }
 
-    public double readDoubleFromConsole() {
+    public static double readDoubleFromConsole() {
         Scanner in = new Scanner(System.in);
         in.useLocale(Locale.US);
         return in.nextDouble();
     }
 
-    public int readIntFromConsole() {
+    public static int readIntFromConsole() {
         Scanner in = new Scanner(System.in);
         in.useLocale(Locale.US);
         return in.nextInt();
     }
 
-    public boolean parseYesOrNo() {
+    public static boolean parseYesOrNo() {
         Scanner in = new Scanner(System.in);
         return in.next().startsWith("y");
     }
