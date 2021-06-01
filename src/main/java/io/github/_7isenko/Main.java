@@ -17,11 +17,11 @@ public class Main {
     public static void main(String[] args) {
         blockErrorStream();
 
-        System.out.println("Выберите ОДУ: ");
-        System.out.println("1: y' + 2xy = 2x^3 * y^3"); //  y(0) = sqrt(2)    y = 1/sqrt(x^2 + 0.5)     уравнение Бернулли
-        System.out.println("2: y' - y/x = x*sin(x)");   //  y(pi/2) = 1       y = x(2/pi - cos(x))
-        System.out.println("3: y' = y^2 + 1");          //  y(0) = 0          y = tg(x)                 от -pi/2 до pi/2
-        System.out.println("4: (13y^3 - x)y' = 4y");    //  y(5) = 1          x = y^3 + 4 / 4root(y)
+        System.out.println("Выберите ОДУ: ");            // pi/2 = 1.56       sqrt(2) = 1.4142
+        System.out.println("1: y' + 2xy = 2x^3 * y^3 "); //  y(0) = sqrt(2)    y = 1/sqrt(x^2 + 0.5)     уравнение Бернулли
+        System.out.println("2: y' - y/x = x*sin(x) ");   //  y(pi/2) = 1       y = x(2/pi - cos(x))      классный график диффура
+        System.out.println("3: y' = y^2 + 1");           //  y(0) = 0          y = tg(x)                 от -pi/2 до pi/2
+        System.out.println("4: (13y^3 - x)y' = 4y ");    //  y(5) = 1          x = y^3 + 4 / 4root(y)
         int chosenAlgorithm = InputReader.readIntFromConsole();
 
         if (chosenAlgorithm > 4 || chosenAlgorithm <= 0) {
@@ -62,18 +62,22 @@ public class Main {
         double accuracy = InputReader.readDoubleFromConsole();
 
         RungeKuttaMethod method = new RungeKuttaMethod(chosenFunction, accuracy);
-        method.solve(starting, endX);
-        ArrayList<Point> points = method.getPoints();
+        ArrayList<Point> points;
+        ArrayList<Point> diffPoints;
+        try {
+            method.solve(starting, endX);
+        } catch (RungeKuttaException e) {
+            System.out.printf("На отрезке (%f; %f) функция претерпевает разрыв%n", e.getBadX1(), e.getBadX2());
+            System.out.println("На графике выведены все данные, которые удалось получить");
+        }
+        points = method.getPoints();
+        diffPoints = method.getDiffPoints();
+        GraphBuilder.drawPoints(points, "y=f(x)", "x", "y");
+        GraphBuilder.drawPoints(diffPoints, "y'=f(x,y)", "y", "y'");
 
-        GraphBuilder.drawPoints(points);
-
-        // TODO: интервал в обратную сторону (попробую)
-        // TODO: проверка одз у тангенса
-        // TODO: график диффура???
-
-     //   for (Point point : points) {
-     //       System.out.printf("x=%f, y=%f\n", point.x, point.y);
-     //   }
+        //   for (Point point : points) {
+        //       System.out.printf("x=%f, y=%f\n", point.x, point.y);
+        //   }
     }
 
     private static void blockErrorStream() {

@@ -10,12 +10,13 @@ import java.util.ArrayList;
  */
 public class RungeKuttaMethod {
     private final double METHOD_PRECISION = 4;
-    private final double RUNGE_RULE_DENOMINATOR = Math.pow(2, METHOD_PRECISION) - 1;
+    private final double METHOD_DENOMINATOR = Math.pow(2, METHOD_PRECISION) - 1;
 
     private final PointFunction ode;
     private final double accuracy;
 
     private ArrayList<Point> points;
+    private ArrayList<Point> diffPoints;
     private int iterations;
 
     public RungeKuttaMethod(PointFunction ode, double accuracy) {
@@ -23,9 +24,10 @@ public class RungeKuttaMethod {
         this.accuracy = accuracy;
     }
 
-    public void solve(Point startingPoint, double endX) {
+    public void solve(Point startingPoint, double endX) throws RungeKuttaException {
         iterations = 0;
         points = new ArrayList<>();
+        diffPoints = new ArrayList<>();
 
         double h = accuracy;
         points.add(startingPoint);
@@ -44,17 +46,23 @@ public class RungeKuttaMethod {
             double k4 = h * ode.solve(new Point(x, current.y + k3));
 
             double y = current.y + (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+            if (!Double.isFinite(y)) throw new RungeKuttaException(points, diffPoints, current.x, x);
             Point newPoint = new Point(x, y);
             points.add(newPoint);
+            diffPoints.add(new Point(newPoint.y, ode.solve(newPoint)));
 
-          //  if (points.size() > 2) {
-          //      double inaccuracy = (newPoint.y - points.get(points.size() - 3).y) / RUNGE_RULE_DENOMINATOR;
-          //  }
+            //  if (points.size() > 2) {
+            //      double inaccuracy = (newPoint.y - points.get(points.size() - 3).y) / RUNGE_RULE_DENOMINATOR;
+            //  }
         }
     }
 
     public ArrayList<Point> getPoints() {
         return points;
+    }
+
+    public ArrayList<Point> getDiffPoints() {
+        return diffPoints;
     }
 
     public int getIterations() {
